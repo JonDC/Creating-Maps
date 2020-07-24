@@ -1,0 +1,63 @@
+                              ################################# MAPS ################################
+
+#install.packages(c("cowplot", "googleway", "ggplot2", "ggrepel", "ggspatial", "libwgeom", "sf", "rnaturalearth", "rnaturalearthdata"))
+
+# 1. INITIATE PACKAGES AND CREATE SF CLASS OBJECT
+
+library("ggplot2")
+library("sf")
+library("rnaturalearth") # package provides maps of countries around the world
+library("rnaturalearthdata") 
+
+theme_set(theme_bw()) # provides dark-on-light theme for maps which is the standard in reporting
+
+# The package rnaturalearth provides a map of countries of the entire world. Use ne_countries 
+# to pull country data and choose the scale (rnaturalearthhires is necessary for scale = "large").
+# The function can return sp classes (default) or directly sf classes, as defined in the argument returnclass:
+install.packages("rgeos")
+world <- ne_countries(scale = "medium", returnclass = "sf")
+class(world)
+
+# 2. CREATE WORLD MAP AND ZOOM INTO AREAS OF INTEREST
+
+ggplot(data = world) + geom_sf()
+
+# ggplot(data = world) == this call initiates the ggplot generic graph and indicates to the ggplot function that the data is in
+# the 'world' object (line 19). The plus sign indicates that this call will be linked to another call:
+# geom_sf() == this call adds a geometry in from the sf object 'world'.
+
+# 2.1 Add titles, subtitles and axis labels
+ggplot(data = world) + geom_sf() + xlab("Longitude") + ylab("Latitude") + ggtitle("World Map")
+# 2.2 Add color to your map
+ggplot(data = world) + geom_sf(color = "black", fill = "lightgreen") + ggtitle("World Map")
+# 2.3 Control the coverage of your map
+ggplot(data = world) + geom_sf() + coord_sf(crs = st_crs(3035)) # this is a globe model
+# In reality, zooming in on the map is accomplished by setting limits on the x-axis and the y-axis.
+# You can set limits on the two axes by using the commands xlim and ylim on the coord_sf argument.
+
+ggplot(data = world) + geom_sf() + coord_sf(xlim = c(19,22.7), ylim = c(41.8,46.1)) + ggtitle("Kosovo") # map of Kosovo
+
+# 3. ADD A SCALEBAR AND A NORTH ARROW (SAVING KOSOVO AND SERBIA COORDINATES)
+
+library("ggspatial") # adds scalebar and north arrow
+Kosovo <- ggplot(data = world) + geom_sf() + coord_sf(xlim = c(18.9,22.7), ylim = c(41.8,46.1), expand = F) + ggtitle("Kosovo") 
+# The xlim and ylim are expanded by a fraction in order to avoid possible overlap.
+# Avoid this by using the command expand = F.
+
+#world_points<- st_centroid(world)
+#world_points <- cbind(world, st_coordinates(st_centroid(world$geometry)))
+
+Kosovo <- ggplot(data = world) +
+  geom_sf(fill = "antiquewhite") +
+  annotation_scale(location = "bl", width_hint = 0.5) +
+  annotation_north_arrow(location = "bl", which_north = "true", 
+                         pad_x = unit(0.1, "in"), pad_y = unit(0.3, "in"),
+                         style = north_arrow_fancy_orienteering) +
+  coord_sf(xlim = c(18,22.7), ylim = c(41.8,46.1), expand = F) + #ggtitle("Kosovo") + # 4. ADD COUNTRY NAMES AND OTHER NAMES
+  annotate(geom = "text", x = 20.9, y = 42.6, label = "Kosovo", fontface = "bold", color = "grey22", size = 6) +
+  annotate(geom = "text", x = 20.8, y = 44, label = "Serbia", fontface = "bold", color = "grey22", size = 7)
+  
+  #geom_text(data = world_points, aes(x=X,y=Y, label = name), color = "black", fontface = "bold", check_overlap = F) 
+Kosovo
+# You can add names on maps in two ways: using the annotate function or using the geom_text argument.
+# The geom_text argument uses centroids defined in the data (lines 47 and 48).
